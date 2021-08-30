@@ -1,6 +1,6 @@
 import spawnAsync from '@expo/spawn-async';
 
-import Log from '../log';
+import Log, { learnMore } from '../log';
 import { confirmAsync, promptAsync } from '../prompts';
 import { Client } from './vcs';
 
@@ -83,9 +83,14 @@ export default class GitClient extends Client {
     await setGitCaseSensitivityAsync(true);
     try {
       if (await this.hasUncommittedChangesAsync()) {
-        await spawnAsync('git', ['status'], { stdio: 'inherit' });
+        Log.error('Detected inconsistent filename casing between your local filesystem and git.');
+        Log.error('This will likely cause your build to fail. Impacted files:');
+        await spawnAsync('git', ['status', '--short'], { stdio: 'inherit' });
+        Log.newLine();
         Log.error(
-          'Case of some of your filenames is inconsistent between values stored in the git and in the filesystem. Run "git config core.ignorecase false" to show those differences.'
+          `Error: Resolve filename casing inconsistencies before proceeding. ${learnMore(
+            'https://expo.fyi/macos-ignorecase'
+          )}`
         );
         throw new Error('You have some uncommitted changes in your repository.');
       }
